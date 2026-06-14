@@ -1,6 +1,6 @@
 // Offline-first service worker for the RAND PWA.
 // Bump CACHE when you redeploy so clients pick up the new bundle.
-const CACHE = 'rand-v3';
+const CACHE = 'rand-v4';
 const ASSETS = [
   '.',
   'index.html',
@@ -8,7 +8,8 @@ const ASSETS = [
   'icon.svg',
   'icon-192.png',
   'icon-512.png',
-  'apple-touch-icon-180.png'
+  'apple-touch-icon-180.png',
+  'audio.mp3'
 ];
 
 self.addEventListener('install', (event) => {

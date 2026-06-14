@@ -5,10 +5,10 @@
   <title>RAND</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no">
   <link rel="manifest" href="manifest.webmanifest">
-  <meta name="theme-color" content="#f5f5f5">
+  <meta name="theme-color" content="#14141a">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="RAND">
   <link rel="apple-touch-icon" href="apple-touch-icon-180.png">
   <link rel="icon" type="image/svg+xml" href="icon.svg">
@@ -24,12 +24,22 @@
 (function(){
   var DESC='Full build';
   function A(el,arr){for(var i=0;i<arr.length;i++){var d=arr[i],j=d.indexOf(':');try{el.style.setProperty(d.slice(0,j),d.slice(j+1),'important');}catch(e){}}}
+  // The reader is found via an anchor that lives in the phone (NOT the spec):
+  // the fake "9:41" status bar (present in every view), falling back to
+  // "Bibliothek". Climb to the largest ancestor that doesn't contain the spec
+  // description, then fullscreen it (one-shot; marker stops re-runs).
+  function anchorEl(){
+    var all=[].slice.call(document.querySelectorAll('*'));
+    var c=all.filter(function(e){return /9:41/.test(e.textContent||'')&&(e.textContent||'').indexOf(DESC)<0;});
+    if(!c.length) c=all.filter(function(e){return /Bibliothek/.test(e.textContent||'')&&(e.textContent||'').indexOf(DESC)<0;});
+    if(!c.length) return null;
+    c.sort(function(a,b){return a.querySelectorAll('*').length-b.querySelectorAll('*').length;});
+    return c[0];
+  }
   function isolate(){
     if(!document.body) return false;
-    var labels=[].slice.call(document.querySelectorAll('*')).filter(function(e){return /Bibliothek/.test(e.textContent||'');});
-    if(!labels.length) return false;
-    labels.sort(function(a,b){return a.querySelectorAll('*').length-b.querySelectorAll('*').length;});
-    var screen=labels[0];
+    var screen=anchorEl();
+    if(!screen) return false;
     while(screen.parentElement&&screen.parentElement!==document.body&&(screen.parentElement.textContent||'').indexOf(DESC)<0)screen=screen.parentElement;
     var cur=screen;
     while(cur&&cur.parentElement&&cur!==document.documentElement){
@@ -43,7 +53,7 @@
     screen.setAttribute('data-rand-app','1');
     var inner=[].slice.call(screen.querySelectorAll('*'));
     inner.forEach(function(e){var t=(e.textContent||'').trim();if(/^9:41$/.test(t)){var p=e;for(var x=0;x<3&&p&&p!==screen;x++){if((p.textContent||'').trim().length<24)p.style.setProperty('display','none','important');p=p.parentElement;}}});
-    inner.forEach(function(e){var r=e.getBoundingClientRect();if(r.top>80||r.height>60||r.width>240||r.width<40)return;var cs=getComputedStyle(e),m=(cs.backgroundColor||'').match(/(\d+),\s*(\d+),\s*(\d+)/);if(m&&(+m[1]+ +m[2]+ +m[3])<150&&(e.textContent||'').trim().length===0)e.style.setProperty('display','none','important');});
+    inner.forEach(function(e){if(e.querySelector('*'))return;if((e.textContent||'').trim()!=='')return;var r=e.getBoundingClientRect();if(r.top>80||r.height>60||r.width>240||r.width<40)return;var cs=getComputedStyle(e),m=(cs.backgroundColor||'').match(/(\d+),\s*(\d+),\s*(\d+)/);if(m&&(+m[1]+ +m[2]+ +m[3])<150)e.style.setProperty('display','none','important');});
     document.documentElement.style.setProperty('background','#fff','important');
     document.body.style.setProperty('background','#fff','important');
     document.body.style.setProperty('overflow','hidden','important');
@@ -51,8 +61,44 @@
   }
   setInterval(function(){
     if(document.querySelector('[data-rand-app]'))return;
-    if(/Bibliothek/.test((document.body&&document.body.textContent)||''))isolate();
+    isolate();
   },150);
+})();
+  </script>
+  <script>
+(function(){
+  var audio=new Audio('audio.mp3'); audio.preload='auto';
+  function root(){return document.querySelector('[data-rand-app]')||document.body;}
+  function playBtn(){
+    var divs=[].slice.call(root().querySelectorAll('div')),i,d,svgs,w;
+    for(i=0;i<divs.length;i++){
+      d=divs[i];
+      if((d.textContent||'').trim()!=='') continue;
+      svgs=d.querySelectorAll('svg');
+      if(svgs.length!==1) continue;
+      w=parseFloat(svgs[0].getAttribute('width')||'0');
+      if(w<14||w>22) continue;
+      if(svgs[0].querySelector('rect')||svgs[0].querySelector('path')) return d;
+    }
+    return null;
+  }
+  function isPlaying(btn){return !!btn.querySelector('rect');}
+  document.addEventListener('click',function(e){
+    var btn=playBtn();
+    if(btn&&(btn===e.target||btn.contains(e.target))){
+      if(isPlaying(btn)){ audio.pause(); }
+      else { if(audio.ended||(audio.duration&&audio.currentTime>=audio.duration-0.05)) audio.currentTime=0; audio.play().catch(function(){}); }
+      return;
+    }
+    var t=(e.target&&(e.target.textContent||'')).trim();
+    if(t==='\u221215'||t==='-15'){ audio.currentTime=Math.max(0,audio.currentTime-15); }
+    else if(t==='+15'){ audio.currentTime=Math.min(audio.duration||1e9,audio.currentTime+15); }
+  },true);
+  setInterval(function(){
+    var btn=playBtn();
+    var appPlaying=btn?isPlaying(btn):false;
+    if(!appPlaying&&!audio.paused) audio.pause();
+  },200);
 })();
   </script>
   <style>
@@ -183,7 +229,7 @@ document.addEventListener('DOMContentLoaded', async function() {
     // attributes through, so match the full opening tag. slice() rather than
     // replace() keeps us clear of $-pattern substitution in resourceScript.
     template = template.replace(/<meta[^>]*name=["']viewport["'][^>]*>/i, '<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no">');
-    const PWA_HEAD = '<link rel="manifest" href="manifest.webmanifest"><meta name="theme-color" content="#f5f5f5"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="default"><meta name="apple-mobile-web-app-title" content="RAND"><link rel="apple-touch-icon" href="apple-touch-icon-180.png"><link rel="icon" type="image/svg+xml" href="icon.svg"><link rel="icon" type="image/png" sizes="192x192" href="icon-192.png"><style>html,body{overscroll-behavior:none;-webkit-tap-highlight-color:transparent;-webkit-text-size-adjust:100%}</style>';
+    const PWA_HEAD = '<link rel="manifest" href="manifest.webmanifest"><meta name="theme-color" content="#14141a"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="RAND"><link rel="apple-touch-icon" href="apple-touch-icon-180.png"><link rel="icon" type="image/svg+xml" href="icon.svg"><link rel="icon" type="image/png" sizes="192x192" href="icon-192.png"><style>html,body{overscroll-behavior:none;-webkit-tap-highlight-color:transparent;-webkit-text-size-adjust:100%}</style>';
     const headOpen = template.match(/<head[^>]*>/i);
     if (headOpen) {
       const i = headOpen.index + headOpen[0].length;
