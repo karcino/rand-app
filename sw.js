@@ -1,6 +1,6 @@
 // Offline-first service worker for the RAND PWA.
 // Bump CACHE when you redeploy so clients pick up the new bundle.
-const CACHE = 'rand-v1';
+const CACHE = 'rand-v3';
 const ASSETS = [
   '.',
   'index.html',
